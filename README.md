@@ -11,25 +11,25 @@ It interprets it as a 2D Texture with correct format.
 It renders a simple spinning quad sampling this texture.
 
 
-Requirements : 
+# Requirements
 
-Vulkan SDK with device supporting those VK extensions : 
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME
-	VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME
-	VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME
-	VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
-GLAD with support for those extensions : 
-		glGenSemaphoresEXT
-		glImportSemaphoreWin32HandleEXT
-		glCreateMemoryObjectsEXT
-		glImportMemoryWin32HandleEXT
-        glTextureStorageMem2DEXT
-GLFW
-GLM
+- Vulkan SDK with device supporting those VK extensions : 
+	- VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	- VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME
+	- VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME
+	- VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME
+	- VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
+- GLAD with support for those extensions : 
+	- glGenSemaphoresEXT
+	- glImportSemaphoreWin32HandleEXT
+	- glCreateMemoryObjectsEXT
+	- glImportMemoryWin32HandleEXT
+	- glTextureStorageMem2DEXT
+- GLFW
+- GLM
 
 
-Install : 
+# Install
 
 There are separate CMakeLists for each project (gl, vk). Run cmake-gui and points necessary values to root folders of vulkan sdk, glfw lib, glm lib, and glad unzipped. You may need to build glfw to link with lib.
 

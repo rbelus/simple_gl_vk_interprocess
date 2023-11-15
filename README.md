@@ -1,3 +1,6 @@
+
+![gl_vk_proto](https://github.com/rbelus/simple_gl_vk_interprocess/assets/22741245/825423b6-ce61-4302-83e2-30a0802730f3)
+
 A simple prototype to try out interprocess work between Vulkan and OpenGL.
 
 Vulkan renders a spinning color-shifting triangle.

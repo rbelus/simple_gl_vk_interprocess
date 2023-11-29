@@ -233,20 +233,24 @@ private:
 	};
 
 	const std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+		{{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
 
 		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
 		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
+		{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
 	};
 
 	const std::vector<uint16_t> indices = {
-	0, 1, 2, 2, 3, 0,
-	4, 5, 6, 6, 7, 4 
+	0, 1, 2, 2, 1, 3,
+	4, 5, 6, 6, 5, 7,
+	2, 3, 6, 6, 3, 7,
+	0, 4, 1, 1, 4, 5,
+	4, 0, 6, 6, 0, 2,
+	1, 5, 3, 3, 5, 7
 	};
 
 	void initWindow() 
@@ -1102,7 +1106,7 @@ private:
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 		UniformBufferObject ubo{};
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.model = glm::identity<glm::mat4>();// glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		ubo.proj = glm::perspective(glm::radians(30.0f), _swapChainExtent.width / (float)_swapChainExtent.height, 1.5f, 5.0f);
 		ubo.proj[1][1] *= -1;

@@ -58,11 +58,14 @@ struct VulkanOGLInterop {
 	HANDLE	hglReady;
 	HANDLE	hglComplete;
 	HANDLE	hglImage;
+	HANDLE	hglDepth;
 	GLuint	semaphoreReady;
 	GLuint	semaphoreComplete;
 
 	GLuint	memoryImage;
+	GLuint	memoryDepth;
 	uint32_t memoryImageSize;
+	uint32_t memoryDepthSize;
 
 	void loadVulkanData()
 	{
@@ -78,6 +81,7 @@ struct VulkanOGLInterop {
 		HANDLE fromVulkanHglReady;
 		HANDLE fromVulkanHglComplete;
 		HANDLE fromVulkanHglImage;
+		HANDLE fromVulkanHglDepth;
 
 		DWORD vulkanProcessID;
 
@@ -88,7 +92,8 @@ struct VulkanOGLInterop {
 		raw >> std::hex >> fromVulkanHglComplete;
 		raw >> std::dec >> memoryImageSize;
 		raw >> std::hex >> fromVulkanHglImage;
-		 
+		raw >> std::dec >> memoryDepthSize;
+		raw >> std::hex >> fromVulkanHglDepth;
 		fileExchange.close();
 
 
@@ -126,6 +131,16 @@ struct VulkanOGLInterop {
 			DUPLICATE_SAME_ACCESS);
 		testWinError();
 
+		DuplicateHandle(
+			vulkanProc,
+			fromVulkanHglDepth,
+			GetCurrentProcess(),
+			&hglDepth,
+			0,
+			FALSE,
+			DUPLICATE_SAME_ACCESS);
+		testWinError();
+
 		glGenSemaphoresEXT(1, &semaphoreReady);
 		glGenSemaphoresEXT(1, &semaphoreComplete);
 		glImportSemaphoreWin32HandleEXT(semaphoreReady, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, hglReady);
@@ -133,10 +148,16 @@ struct VulkanOGLInterop {
 
 		glCreateMemoryObjectsEXT(1, &memoryImage);
 		glImportMemoryWin32HandleEXT(memoryImage, memoryImageSize, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, hglImage);
+
+		glCreateMemoryObjectsEXT(1, &memoryDepth);
+		glImportMemoryWin32HandleEXT(memoryDepth, memoryDepthSize, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, hglDepth);
+
+
+
 	}
 };
 
-int main() 
+int main()
 {
 	GLFWwindow* window;
 	GLuint vertex_buffer, vertex_shader, fragment_shader, program;
@@ -187,7 +208,7 @@ int main()
 	glBindVertexArray(VAO);
 
 	glGenBuffers(1, &vertex_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer); 
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 	glBufferData(GL_ARRAY_BUFFER, mesh.size() * sizeof(Vertex), &mesh[0], GL_STATIC_DRAW);
 
 	{
@@ -278,9 +299,6 @@ int main()
 	}
 
 	mvp_location = glGetUniformLocation(program, "MVP");
-	//vpos_location = glGetAttribLocation(program, "vPos");
-	//vcol_location = glGetAttribLocation(program, "vCol");
-	//vuv_location = glGetAttribLocation(program, "vUV");
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
@@ -288,30 +306,37 @@ int main()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)sizeof(vec2));
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(vec2) + sizeof(vec2)));
-	
-	//glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-	//	sizeof(vertices[0]), (void*)(sizeof(float) * 2));
-	//glEnableVertexAttribArray(vuv_location);
-	//glVertexAttribPointer(vuv_location, 2, GL_FLOAT, GL_FALSE,
-	//	sizeof(vertices[0]), (void*)(sizeof(float) * 5));
-
-	// Get the OpenGL Memory object
-	//glCreateMemoryObjectsEXT(1, nullptr);
-	//auto req = device.getBufferMemoryRequirements(bufGl.bufVk.buffer);
-	//glImportMemoryWin32HandleEXT(bufGl.memoryObject, req.size, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, bufGl.handle);
 
 	// Load all vulkan related data
 	VulkanOGLInterop vulkanData;
 	vulkanData.loadVulkanData();
 
+	glUseProgram(program);
+	GLuint diffTex = glGetUniformLocation(program, "colorSampler");
+	GLuint depthTex = glGetUniformLocation(program, "depthSampler");
+
+	glUniform1i(diffTex, 0);
+	glUniform1i(depthTex, 1);
+
 	GLuint textureID;
+	GLuint depthID;
 	glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
-	glTextureStorageMem2DEXT(textureID, 1, GL_RGBA8, WIDTH, HEIGHT, vulkanData.memoryImage, 0);
+	glTextureStorageMem2DEXT(textureID, 1, GL_RGB8, WIDTH, HEIGHT, vulkanData.memoryImage, 0);
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
 	glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+	glCreateTextures(GL_TEXTURE_2D, 1, &depthID);
+	// Commented but left for debug, this is the format if we want to display the tex
+	//glTextureStorageMem2DEXT(depthID, 1, GL_R32F, WIDTH, HEIGHT, vulkanData.memoryDepth, 0);
+	glTextureStorageMem2DEXT(depthID, 1, GL_DEPTH_COMPONENT32F, WIDTH, HEIGHT, vulkanData.memoryDepth, 0);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, depthID);
+
+	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.5f, 0.5f, 0.5f, 1.f);
 
 	while (!glfwWindowShouldClose(window))
@@ -325,6 +350,7 @@ int main()
 
 		glViewport(0, 0, width, height);
 		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
 		mat4x4_identity(m);
 		mat4x4_rotate_Z(m, m, (float)glfwGetTime());
@@ -334,14 +360,14 @@ int main()
 		glUseProgram(program);
 		glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)mvp);
 
-		//glBindTextureUnit(0, textureID);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
+		glActiveTexture(GL_TEXTURE0 + 1);
+		glBindTexture(GL_TEXTURE_2D, depthID);
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
-
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
